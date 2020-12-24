@@ -1,8 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas
 
-from utils import Random, Drawer, NormalDistribution
+from utils import Drawer, NormalDistribution
 
 
 def normal_distribution(low, high, n, scale=3):
@@ -23,6 +21,7 @@ drawer = Drawer(
         },
         {"label": "Scale", "valmin": 0.5, "valmax": 6, "valstep": 0.25, "valinit": 3},
     ],
+    intervals=5,
     title="Normal distribution",
 )
 drawer.draw_distribution(n=500, scale=3)

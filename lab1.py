@@ -1,7 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas
-
 from crand import crand
 from utils import Random, Drawer
 
@@ -17,6 +13,6 @@ drawer = Drawer(
             "valstep": 100,
         },
     ],
-    title="Ravnomernoe distribution",
+    title="Uniform distribution",
 )
 drawer.draw_distribution(n=500)

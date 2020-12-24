@@ -37,6 +37,19 @@ class Random:
         res.update(dict(zip(unique, counts)))
         return OrderedDict(sorted(res.items()))
 
+    def get_distribution_intervals(self, distribution, normalize=True, intervals=5):
+        counts = np.array(
+            [
+                np.sum(
+                    [distribution.get(i, 0) for i in range(int(k), int(k + intervals))]
+                )
+                for k in distribution.keys()
+            ]
+        )
+        if normalize:
+            counts = np.divide(counts, np.sum(counts))
+        return OrderedDict({k: v for k, v in zip(distribution.keys(), counts)})
+
     def generate(self, n, force=False, **kwargs):
         if force:
             self._generated = []
@@ -68,9 +81,22 @@ class Drawer:
     BASE_PLOT_MARGIN = 0.18
     PLOT_MARGIN = 0.05
 
-    def __init__(self, generator, sliders=None, title="Random distribution"):
+    def __init__(
+        self, generator, sliders=None, intervals=None, title="Random distribution"
+    ):
         self.generator = generator
-        self.figure, axes = plt.subplots()
+        self.intervals = intervals
+        ncols = 1 if intervals is None else 2
+        self.figure, axes = plt.subplots(ncols=ncols)
+        if intervals is None:
+            self.axes = axes
+            self.intervals_axes = None
+        else:
+            self.axes = axes[0]
+            self.intervals_axes = axes[1]
+            self.intervals_axes.set_xlim(self.generator.low, self.generator.high - 1)
+            self.intervals_axes.set_xlabel("Intervals with lenght 5")
+
         self.figure.set_size_inches(8, 6)
         self.is_active = False
 
@@ -82,7 +108,6 @@ class Drawer:
             )
             self.figure.subplots_adjust(bottom=plot_bottom_margin)
 
-        self.axes = axes
         self.axes.set_xlim(self.generator.low, self.generator.high - 1)
         self.axes.set_xlabel("Random value")
         self.axes.set_ylabel("Probability")
@@ -97,22 +122,48 @@ class Drawer:
     def draw_distribution(self, **kwargs):
         distribution = self.generator.get_distribution(**kwargs)
         x, y = list(distribution.keys()), list(distribution.values())
-        max_value = np.max(y)
+
+        if self.intervals is not None:
+            # breakpoint()
+            intervals_distribution = self.generator.get_distribution_intervals(
+                distribution, intervals=self.intervals
+            )
+            ix, iy = list(intervals_distribution.keys()), list(
+                intervals_distribution.values()
+            )
+
+        max_value = max(np.max(y), np.max(iy) if self.intervals is not None else 0)
         y_lim = min(1, max_value * 2)
 
         self.axes.set_ylim(0, y_lim)
+        if self.intervals_axes is not None:
+            self.intervals_axes.set_ylim(0, y_lim)
         if not self.is_active:
             self.bar = self.axes.bar(x, y, color="blue")
             self.plot = self.axes.plot(x, y, color="red", linewidth=2, linestyle="--")[
                 0
             ]
+            if self.intervals_axes is not None:
+                self.intervals_bar = self.intervals_axes.bar(ix, iy, color="green")
+                self.intervals_plot = self.intervals_axes.plot(
+                    ix, iy, color="red", linewidth=2, linestyle="--"
+                )[0]
             self.is_active = True
             plt.show()
         else:
-            self.plot.set_xdata(x)
-            self.plot.set_ydata(y)
+            self.plot.remove()
+            self.plot = self.axes.plot(x, y, color="red", linewidth=2, linestyle="--")[
+                0
+            ]
             self.bar.remove()
             self.bar = self.axes.bar(x, y, color="blue")
+            if self.intervals_axes is not None:
+                self.intervals_plot.remove()
+                self.intervals_plot = self.intervals_axes.plot(
+                    ix, iy, color="red", linewidth=2, linestyle="--"
+                )[0]
+                self.intervals_bar.remove()
+                self.intervals_bar = self.intervals_axes.bar(ix, iy, color="green")
             self.figure.canvas.draw_idle()
 
     def add_slider(self, slider, n):
