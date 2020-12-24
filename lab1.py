@@ -1,7 +1,6 @@
-from crand import crand
-from utils import Random, Drawer
+from utils import Random, Drawer, crand
 
-generator = Random(0, 10, generator=crand)
+generator = Random(0, 20, generator=crand)
 drawer = Drawer(
     generator,
     sliders=[
